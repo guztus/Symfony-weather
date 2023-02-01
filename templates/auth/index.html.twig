@@ -1,0 +1,75 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <script>
+        // function login() {
+        // fetch( "https://127.0.0.1:8000/api/login_check", {
+        //     method: 'post',
+        //     headers: {
+        //         'Content-Type': 'application/json'
+        //     },
+        //     body: JSON.stringify( {
+        //         "username": "dasa@dasa.lv",
+        //         "password": "dasa@dasa.lv",
+        //     } )
+        // }).then( res => res.json() )
+        //     .then( res => {
+        //         console.log( res );
+        //     })
+        // }
+
+        window.onload = function() {
+            const form = document.getElementById("login-form");
+
+            form.addEventListener("submit", (event) => {
+                event.preventDefault();
+
+                const formData = new FormData(form);
+                const data = {};
+
+                formData.forEach((value, key) => {
+                    data[key] = value;
+                });
+
+                const options = {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(data),
+                };
+
+                fetch("/api/login_check", options)
+                    .then((response) => response.json())
+                    .then((data) => {
+                        console.log(data);
+                        if (!data.code) {
+                            window.location = "/api/home";
+                        } else {
+                            document.getElementById("error-message").textContent = "Invalid credentials!";
+                        }
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                        document.getElementById("error-message").textContent = "Login error!";
+                    });
+            });
+        };
+    </script>
+
+    <button onclick="login()">Attempt to log in</button>
+
+    <form id="login-form">
+        <div id="error-message" style="color: darkred"></div>
+        <div>
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username">
+        </div>
+        <div>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password">
+        </div>
+        <button type="submit">Login</button>
+    </form>
+
+{% endblock %}
