@@ -1,0 +1,37 @@
+<nav>
+    <ul>
+        <li><a href="/">Home</a></li>
+        {% if app.request.cookies.get('BEARER') %}
+            <li><a href="/logout">Logout</a></li>
+        {% else %}
+            <li><a href="/login">Login</a></li>
+            <li><a href="/register">Register</a></li>
+        {% endif %}
+    </ul>
+</nav>
+
+<script>
+    $.cookie('BEARER', { path: '/' });
+</script>
+
+<style>
+    nav {
+        background-color: #333;
+    }
+    ul {
+        list-style-type: none;
+        margin: 0;
+        padding: 4px;
+    }
+    li {
+        display: inline;
+    }
+    a {
+        text-decoration: none;
+        padding: 0 8px 0 8px;
+        color: #fff;
+    }
+    a:hover {
+        color: #ccc;
+    }
+</style>

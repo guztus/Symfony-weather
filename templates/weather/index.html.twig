@@ -1,20 +1,126 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Hello WeatherController!{% endblock %}
+{% block title %} Weather {% endblock %}
 
 {% block body %}
-<style>
-    .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
-    .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
-</style>
 
-<div class="example-wrapper">
-    <h1>Hello {{ controller_name }}! ✅</h1>
+    <div class="container">
+        {% if app.request.cookies.get('BEARER') %}
+            <div class="button-wrapper" style="display: flex; flex-direction: column">
+                <div>
+                <button onclick="getWeather('Riga', 'now')">Get weather in Riga</button>
+                <button onclick="getWeather('Riga', 'forecast-average')">Get 5-day forecast average weather in Riga</button>
+                <div>
+                <button onclick="getWeather('New York', 'now')">Get weather in New York</button>
+                <button onclick="getWeather('New York', 'forecast-average')">Get 5-day forecast average weather in New York</button>
+                </div>
+                <select id="units">
+                    <option value="metric">Metric</option>
+                    <option value="imperial">Imperial</option>
+                </select>
+            </div>
 
-    This friendly message is coming from:
-    <ul>
-        <li>Your controller at <code><a href="{{ '/home/guztus/Desktop/Projects/01_BIG_PROJECTS/COMPANY/latest symfony weather/my_project_6/src/Controller/WeatherController.php'|file_link(0) }}">src/Controller/WeatherController.php</a></code></li>
-        <li>Your template at <code><a href="{{ '/home/guztus/Desktop/Projects/01_BIG_PROJECTS/COMPANY/latest symfony weather/my_project_6/templates/weather/index.html.twig'|file_link(0) }}">templates/weather/index.html.twig</a></code></li>
-    </ul>
-</div>
+            <div id="weather-wrapper">
+                <p>Temperature: <span id="temperature"></span> <span id="temperature-units"></span></p>
+                <p>Wind speed: <span id="wind-speed"></span> <span id="wind-units"></span></p>
+            </div>
+        {% else %}
+            <h1>Weather</h1>
+            <p>You need to be logged in to use the weather fetcher</p>
+        {% endif %}
+    </div>
+
+    <script>
+        function getWeather(city, weatherType) {
+            $.ajax({
+                type: "GET",
+                url: "/api/token/refresh",
+            });
+
+            $.ajax({
+                type: "GET",
+                url: "/api/weather/" + city + "/" + weatherType,
+                contentType: "application/json",
+                success: function(data) {
+                    showWeatherData(data);
+                },
+                error: function(error) {
+                    console.error(error);
+                }
+            });
+        }
+
+        function showWeatherData(data) {
+            if (data.temperature === null) {
+                $("#temperature").text("N/A");
+                $("#wind-speed").text("N/A");
+                $("#weather-wrapper").css("display", "block");
+                return;
+            }
+            if ($("#units").val() === "imperial") {
+                data.temperature = (data.temperature * 9/5) + 32;
+                data.wind_speed = data.wind_speed * 2.23694;
+                $("#temperature-units").text("F");
+                $("#wind-units").text("mph");
+            } else {
+                $("#temperature-units").text("C");
+                $("#wind-units").text("m/s");
+            }
+            $("#temperature").text(data.temperature.toFixed(2));
+            $("#wind-speed").text(data.wind_speed.toFixed(2));
+
+            $("#weather-wrapper").css("display", "block");
+        }
+    </script>
+
+    <style>
+        button {
+            background: #FBFBFB;
+            border: 1px solid #EAEAEA;
+            border-radius: 15px;
+            padding: 10px;
+            font-size: 1.2em;
+            cursor: pointer;
+            margin: 5px;
+        }
+        select {
+            background: #FBFBFB;
+            border: 1px solid #EAEAEA;
+            border-radius: 15px;
+            padding: 10px;
+            font-size: 1.2em;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .container {
+            margin-top: 2em;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+        .button-wrapper {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .buttons input {
+            width: 200px;
+        }
+        .buttons select {
+            width: 200px;
+        }
+        .buttons button {
+            width: 200px;
+        }
+
+        #weather-wrapper {
+            display: none;
+            background: #FBFBFB;
+            border-radius: 15px;
+            padding: 10px
+        }
+    </style>
 {% endblock %}

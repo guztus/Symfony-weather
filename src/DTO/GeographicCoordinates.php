@@ -4,8 +4,8 @@ namespace App\DTO;
 
 class GeographicCoordinates
 {
-    private float $latitude;
-    private float $longitude;
+    private ?float $latitude;
+    private ?float $longitude;
 
     public function __construct(?float $latitude, ?float $longitude)
     {

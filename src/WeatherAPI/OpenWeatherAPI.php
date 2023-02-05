@@ -2,6 +2,7 @@
 
 namespace App\WeatherAPI;
 
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
@@ -11,7 +12,7 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 use App\DTO\Weather;
 use App\DTO\GeographicCoordinates;
 
-class OpenWeatherAPI implements WeatherAPIInterface
+class OpenWeatherAPI extends AbstractController implements WeatherAPIInterface
 {
     private HttpClientInterface $client;
     private const API_URL = "https://api.openweathermap.org/";
@@ -41,7 +42,7 @@ class OpenWeatherAPI implements WeatherAPIInterface
                         [
                             'lat' => $coordinates->getLatitude(),
                             'lon' => $coordinates->getLongitude(),
-                            'appid' => $this->apiKey,
+                            'appid' => $this->getParameter('OpenWeatherMap_API_KEY'),
                         ]
                 ]
             );
@@ -53,7 +54,7 @@ class OpenWeatherAPI implements WeatherAPIInterface
         $temp = 0;
         $wind = 0;
         foreach ($response['list'] as $item) {
-            $temp += ($item['main']['temp']);
+            $temp += ($item['main']['temp'] - 273.15);
             $wind += ($item['wind']['speed']);
         }
         $temp = $temp / count($response['list']);
@@ -81,7 +82,7 @@ class OpenWeatherAPI implements WeatherAPIInterface
                         [
                             'lat' => $coordinates->getLatitude(),
                             'lon' => $coordinates->getLongitude(),
-                            'appid' => $this->apiKey,
+                            'appid' => $this->getParameter('OpenWeatherMap_API_KEY'),
                         ]
                 ]
             );
@@ -90,7 +91,7 @@ class OpenWeatherAPI implements WeatherAPIInterface
             return new Weather($city, null, null);
         }
 
-        $temp = $response['main']['temp'];
+        $temp = $response['main']['temp'] - 273.15;
         $wind = $response['wind']['speed'];
         return new Weather($city, $temp, $wind);
     }
@@ -112,14 +113,15 @@ class OpenWeatherAPI implements WeatherAPIInterface
                     'query' =>
                         [
                             'q' => $city,
-                            'appid' => $this->apiKey,
+                            'appid' => $this->getParameter('OpenWeatherMap_API_KEY'),
                         ]
                 ]
             );
             $response = $response->toArray();
+            $coordinates = new GeographicCoordinates($response[0]['lat'], $response[0]['lon']);
         } catch (\Exception) {
             return new GeographicCoordinates(null, null);
         }
-        return new GeographicCoordinates($response[0]['lat'], $response[0]['lon']);
+        return $coordinates;
     }
 }
