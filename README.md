@@ -20,11 +20,11 @@ Authenticated users can fetch the temperature and wind speed:
 <div style="text-align: center">
     <h3>Registering and Logging in</h3>
     <p align="center">
-        <img src="/gif1.gif"  width="95%" alt="animated-demo" /><br>
+        <img src="/GIF_1.gif"  width="95%" alt="animated-demo" /><br>
     </p>
     <h3>Fetching the weather</h3>
     <p align="center">
-        <img src="/gif2.gif" width="95%" alt="animated-demo" /><br>
+        <img src="/GIF_2.gif" width="95%" alt="animated-demo" /><br>
     </p>
 </div>
 

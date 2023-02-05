@@ -6,8 +6,10 @@ use App\Entity\User;
 use App\Form\RegistrationFormType;
 use App\Security\EmailVerifier;
 use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Util\Json;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mime\Address;
@@ -18,65 +20,33 @@ use SymfonyCasts\Bundle\VerifyEmail\Exception\VerifyEmailExceptionInterface;
 
 class RegistrationController extends AbstractController
 {
-    private EmailVerifier $emailVerifier;
-
-    public function __construct(EmailVerifier $emailVerifier)
+    #[Route('/register', name: 'app_register_form', methods: 'GET')]
+    public function registerForm(): Response
     {
-        $this->emailVerifier = $emailVerifier;
+        return $this->render('registration/register.html.twig');
     }
 
-    #[Route('/register', name: 'app_register')]
+    #[Route('/register', name: 'app_register_post', methods: 'POST')]
     public function register(Request $request, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager): Response
     {
+        $request = json_decode($request->getContent(), true);
+        if (!isset($request['email']) || !isset($request['plainPassword'])) {
+            return new JsonResponse(['error' => 'Invalid request'], 400);
+        }
+
+        $user = $entityManager
+            ->getRepository(User::class)
+            ->findOneBy(['email' => $request['email']]);
+        if ($user) {
+            return new JsonResponse(['error' => 'User with this email already exists'], 400);
+        }
+
         $user = new User();
-        $form = $this->createForm(RegistrationFormType::class, $user);
-        $form->handleRequest($request);
+        $user->setEmail($request['email']);
+        $user->setPassword($userPasswordHasher->hashPassword($user, $request['plainPassword']));
+        $entityManager->persist($user);
+        $entityManager->flush();
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            // encode the plain password
-            $user->setPassword(
-                $userPasswordHasher->hashPassword(
-                    $user,
-                    $form->get('plainPassword')->getData()
-                )
-            );
-            $entityManager->persist($user);
-            $entityManager->flush();
-
-            return $this->redirectToRoute('app_login');
-
-            // generate a signed url and email it to the user
-//            $this->emailVerifier->sendEmailConfirmation('app_verify_email', $user,
-//                (new TemplatedEmail())
-//                    ->from(new Address('gustavs.zubars@gmail.com', 'Acme Mail Bot'))
-//                    ->to($user->getEmail())
-//                    ->subject('Please Confirm your Email')
-//                    ->htmlTemplate('registration/confirmation_email.html.twig')
-//            );
-        }
-
-        return $this->render('registration/register.html.twig', [
-            'registrationForm' => $form->createView(),
-        ]);
-    }
-
-    #[Route('/verify/email', name: 'app_verify_email')]
-    public function verifyUserEmail(Request $request, TranslatorInterface $translator): Response
-    {
-        $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
-
-        // validate email confirmation link, sets User::isVerified=true and persists
-        try {
-            $this->emailVerifier->handleEmailConfirmation($request, $this->getUser());
-        } catch (VerifyEmailExceptionInterface $exception) {
-            $this->addFlash('verify_email_error', $translator->trans($exception->getReason(), [], 'VerifyEmailBundle'));
-
-            return $this->redirectToRoute('app_register');
-        }
-
-        // @TODO Change the redirect on success and handle or remove the flash message in your templates
-        $this->addFlash('success', 'Your email address has been verified.');
-
-        return $this->redirectToRoute('app_register');
+        return new JsonResponse(['success' => 'User created'], 200);
     }
 }

@@ -4,123 +4,118 @@
 
 {% block body %}
 
-    <div class="container">
-        {% if app.request.cookies.get('BEARER') %}
-            <div class="button-wrapper" style="display: flex; flex-direction: column">
-                <div>
-                <button onclick="getWeather('Riga', 'now')">Get weather in Riga</button>
-                <button onclick="getWeather('Riga', 'forecast-average')">Get 5-day forecast average weather in Riga</button>
-                <div>
-                <button onclick="getWeather('New York', 'now')">Get weather in New York</button>
-                <button onclick="getWeather('New York', 'forecast-average')">Get 5-day forecast average weather in New York</button>
-                </div>
-                <select id="units">
-                    <option value="metric">Metric</option>
-                    <option value="imperial">Imperial</option>
-                </select>
-            </div>
+{% if app.request.cookies.get('BEARER') %}
+    <div class="container my-5">
+        <div class="card w-50 mb-3 bg-dark text-white" style="border-radius: 1rem;">
+            <div class="card-body d-flex flex-column text-center">
+                <h5 class="card-title fw-bold mb-2 text-uppercase my-4">Weather</h5>
+                <p class="text-white-50 mb-4">Please make your selection!</p>
 
-            <div id="weather-wrapper">
-                <p>Temperature: <span id="temperature"></span> <span id="temperature-units"></span></p>
-                <p>Wind speed: <span id="wind-speed"></span> <span id="wind-units"></span></p>
+                <div class="mb-2">
+                    <div class="d-flex justify-content-evenly mb-3 buttons">
+                        <button class="btn btn-light m-2" onclick="getWeather('Riga', 'now')">Get weather in Riga</button>
+                        <button class="btn btn-light m-2" onclick="getWeather('Riga', 'forecast-average')">Get 5-day forecast average in Riga</button>
+                    </div>
+                    <div class="d-flex justify-content-evenly mb-3 buttons">
+                        <button class="btn btn-light m-2" onclick="getWeather('New York', 'now')">Get weather in New York</button>
+                        <button class="btn btn-light m-2" onclick="getWeather('New York', 'forecast-average')">Get 5-day forecast average in New York</button>
+                    </div>
+                </div>
+                <div class="form-group mb-3 text-center buttons">
+                    <select class="custom-select" id="units">
+                        <option value="metric">Metric</option>
+                        <option value="imperial">Imperial</option>
+                    </select>
+                </div>
             </div>
-        {% else %}
-            <h1>Weather</h1>
-            <p>You need to be logged in to use the weather fetcher</p>
-        {% endif %}
+        </div>
+        <div id="weather-wrapper" class="card w-50 py-4 mb-3 bg-dark text-white" style="border-radius: 1rem;">
+            <div class="card-body d-flex flex-column text-center">
+                    <h5 class="card-title fw-bold mb-4 text-uppercase">Weather Data</h5>
+                    <p class="card-text">* Temperature: <span id="temperature"></span> <span id="temperature-units"></span></p>
+                    <p class="card-text">* Wind speed: <span id="wind-speed"></span> <span id="wind-units"></span></p>
+            </div>
+        </div>
     </div>
 
-    <script>
-        function getWeather(city, weatherType) {
-            $.ajax({
-                type: "GET",
-                url: "/api/token/refresh",
-            });
+{% else %}
+    <div class="container my-5">
+        <div class="card w-50 mb-3 bg-dark text-white" style="border-radius: 1rem;">
+            <div class="card-body d-flex flex-column text-center">
+                <h5 class="card-title fw-bold mb-2 text-uppercase my-4">Weather</h5>
+                <p class="text-white-50 mb-4">You need to be logged in to use the weather fetcher</p>
+            </div>
+        </div>
+    </div>
+{% endif %}
 
-            $.ajax({
-                type: "GET",
-                url: "/api/weather/" + city + "/" + weatherType,
-                contentType: "application/json",
-                success: function(data) {
-                    showWeatherData(data);
-                },
-                error: function(error) {
-                    console.error(error);
-                }
-            });
-        }
 
-        function showWeatherData(data) {
-            if (data.temperature === null) {
-                $("#temperature").text("N/A");
-                $("#wind-speed").text("N/A");
-                $("#weather-wrapper").css("display", "block");
-                return;
+<script>
+    function getWeather(city, weatherType) {
+        $.ajax({
+            type: "GET",
+            url: "/api/token/refresh",
+        });
+
+        $.ajax({
+            type: "GET",
+            url: "/api/weather/" + city + "/" + weatherType,
+            contentType: "application/json",
+            success: function(data) {
+                showWeatherData(data);
+            },
+            error: function(error) {
+                console.error(error);
             }
-            if ($("#units").val() === "imperial") {
-                data.temperature = (data.temperature * 9/5) + 32;
-                data.wind_speed = data.wind_speed * 2.23694;
-                $("#temperature-units").text("F");
-                $("#wind-units").text("mph");
-            } else {
-                $("#temperature-units").text("C");
-                $("#wind-units").text("m/s");
-            }
-            $("#temperature").text(data.temperature.toFixed(2));
-            $("#wind-speed").text(data.wind_speed.toFixed(2));
+        });
+    }
 
+    function showWeatherData(data) {
+        if (data.temperature === null) {
+            $("#temperature").text("N/A");
+            $("#wind-speed").text("N/A");
             $("#weather-wrapper").css("display", "block");
+            return;
         }
-    </script>
+        if ($("#units").val() === "imperial") {
+            data.temperature = (data.temperature * 9/5) + 32;
+            data.wind_speed = data.wind_speed * 2.23694;
+            $("#temperature-units").text("F");
+            $("#wind-units").text("mph");
+        } else {
+            $("#temperature-units").text("C");
+            $("#wind-units").text("m/s");
+        }
+        $("#temperature").text(data.temperature.toFixed(2));
+        $("#wind-speed").text(data.wind_speed.toFixed(2));
 
-    <style>
-        button {
-            background: #FBFBFB;
-            border: 1px solid #EAEAEA;
-            border-radius: 15px;
-            padding: 10px;
-            font-size: 1.2em;
-            cursor: pointer;
-            margin: 5px;
-        }
-        select {
-            background: #FBFBFB;
-            border: 1px solid #EAEAEA;
-            border-radius: 15px;
-            padding: 10px;
-            font-size: 1.2em;
-            cursor: pointer;
-            margin: 5px;
-        }
-        .container {
-            margin-top: 2em;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-        }
-        .button-wrapper {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .buttons input {
-            width: 200px;
-        }
-        .buttons select {
-            width: 200px;
-        }
-        .buttons button {
-            width: 200px;
-        }
+        $("#weather-wrapper").css("display", "block");
+    }
+</script>
 
-        #weather-wrapper {
-            display: none;
-            background: #FBFBFB;
-            border-radius: 15px;
-            padding: 10px
-        }
-    </style>
+<style>
+    select {
+        background: #FBFBFB;
+        border: 1px solid #EAEAEA;
+        border-radius: 15px;
+        padding: 10px;
+        font-size: 1.2em;
+        cursor: pointer;
+        margin: 5px;
+    }
+    .container {
+        margin-top: 2em;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+    }
+    button {
+        width: 260px;
+    }
+    #weather-wrapper {
+        display: none;
+    }
+</style>
 {% endblock %}
